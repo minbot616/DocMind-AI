@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# Virtual environments
+venv/
+.venv/
+
+# IDE files
+.vscode/
+.idea/
+
+# Environment variables
+.env
+
+# Logs
+*.log
+
+# Generated databases
+database/*.db
+
+# Uploaded documents
+documents/
+
+# Generated vector indexes
+vectors/
+
+# Operating system files
+.DS_Store
+Thumbs.db
