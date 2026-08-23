@@ -34,13 +34,28 @@ class ChatManager:
 
     @staticmethod
     def rename_chat(chat_id: int, new_title: str) -> bool:
-        """Renames a chat session."""
-        return DatabaseManager.rename_chat(chat_id, new_title)
+        """Renames a chat session safely."""
+        try:
+            return DatabaseManager.rename_chat(chat_id, new_title)
+        except Exception as e:
+            logger.warning(f"Non-fatal error renaming chat {chat_id}: {e}")
+            return False
 
     @staticmethod
     def delete_chat(chat_id: int) -> bool:
         """Deletes a chat session."""
         return DatabaseManager.delete_chat(chat_id)
+
+    @staticmethod
+    def get_chat_summary(chat_id: int) -> Optional[str]:
+        """Retrieves persistent conversation summary from database."""
+        return DatabaseManager.get_chat_summary(chat_id)
+
+    @staticmethod
+    def update_chat_summary(chat_id: int, summary: str) -> bool:
+        """Updates persistent conversation summary in database."""
+        return DatabaseManager.update_chat_summary(chat_id, summary)
+
 
     # --- Special AI Operations ---
 

@@ -1,30 +1,47 @@
-# Python
+# Python Bytecode & Caches
 __pycache__/
 *.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
 
-# Virtual environments
+# Virtual Environments
 venv/
 .venv/
+env/
 
-# IDE files
-.vscode/
-.idea/
-
-# Environment variables
+# Environment Variables & Secrets
 .env
+.env.local
+.env.*.local
 
 # Logs
 *.log
+docmind_ai.log
+docmind_backend.log
 
-# Generated databases
+# Generated Databases (SQLite & local test databases)
 database/*.db
+backend/database/*.db
+tests/*.db
 
-# Uploaded documents
-documents/
+# Uploaded Documents & Vector Storage (Preserves directory structure)
+documents/*
+!documents/.gitkeep
+vectors/*
+!vectors/.gitkeep
 
-# Generated vector indexes
-vectors/
+# Evaluation Results
+evaluation/results/*
+!evaluation/results/.gitkeep
 
-# Operating system files
+# IDE Configuration
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Operating System Files
 .DS_Store
 Thumbs.db

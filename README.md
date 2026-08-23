@@ -1,239 +1,193 @@
-# DocMind AI - Desktop RAG Assistant
+# DocMind AI — Document Intelligence & RAG Workspace
+
+DocMind AI is an end-to-end, production-grade **Retrieval-Augmented Generation (RAG) & Agent System**. It pairs a high-performance **FastAPI backend**, **PostgreSQL** database persistence, **Hybrid Retrieval (Dense FAISS + Sparse BM25)**, **Cross-Encoder Reranking**, **Strict Citation Grounding**, and **Token-Aware Context Memory** with a modern dark-mode single-page Web Workspace (HTML/CSS/JavaScript).
+
+---
+
+## Key Features
+
+- **Multi-Document Ingestion**: Upload PDFs, DOCX, TXT, and Markdown files. Automatic text extraction, structural chunking, and metadata parsing.
+- **Hybrid Retrieval System**: Combines **FAISS** vector embeddings (`all-MiniLM-L6-v2`) with **Sparse BM25** keyword search using **Reciprocal Rank Fusion (RRF)**.
+- **Cross-Encoder Reranking**: Re-scores candidate context chunks using `cross-encoder/ms-marco-MiniLM-L-6-v2` for precise relevancy ranking.
+- **Controlled Agent Orchestrator**: Multi-tool agent pipeline with intent routing, deterministic calculation tool, document search, and metadata querying.
+- **Strict Citation Grounding**: Verifies generated answers against retrieved context snippets to ensure accuracy and prevent hallucinations.
+- **Token-Aware Context Memory**: Tracks token budgets, automatically generates sliding conversation summaries, and manages short/long-term context.
+- **Multi-Provider LLM Integration**: Out-of-the-box support for **Groq Cloud API**, **OpenAI GPT**, and local **Ollama** servers with automatic active model resolution (`llama-3.1-8b-instant`).
+- **Encrypted Credentials at Rest**: Server-side Fernet encryption (`cryptography.fernet.Fernet`) for all stored LLM API keys in PostgreSQL.
+- **Full History & Persistence**: Persistent PostgreSQL database tracking user sessions, uploaded documents, conversation history, and user settings.
+
+---
+
+## System Architecture
 
 ```text
-========================================================================
-  ██████╗  ██████╗  ██████╗███╗   ███╗██╗███╗   ██╗██████╗      █████╗ ██╗
-  ██╔══██╗██╔═══██╗██╔════╝████╗ ████║██║████╗  ██║██╔══██╗    ██╔══██╗██║
-  ██║  ██║██║   ██║██║     ██╔████╔██║██║██╔██╗ ██║██║  ██║    ███████║██║
-  ██║  ██║██║   ██║██║     ██║╚██╔╝██║██║██║╚██╗██║██║  ██║    ██╔══██║██║
-  ██████╔╝╚██████╔╝╚██████╗██║ ╚═╝ ██║██║██║ ╚████║██████╔╝    ██║  ██║██║
-  ╚═════╝  ╚═════╝  ╚═════╝╚═╝     ╚═╝╚═╝╚═╝  ╚═══╝╚═════╝     ╚═╝  ╚═╝╚═╝
-========================================================================
-                   INTELLIGENT LOCAL & CLOUD RAG DESKTOP
-```
-
-## Overview
-**DocMind AI** is an intelligent desktop application that lets you run local and cloud-based Retrieval-Augmented Generation (RAG) queries against your document libraries. Built entirely in Python using **CustomTkinter** for a premium responsive desktop interface, and **LangChain** + **FAISS** for search indexing, it represents a clean, modular assistant with advanced controls and detailed session analytics.
-
----
-
-## Architecture
-The application splits concerns across an Object-Oriented design separating UI views, DB management, model generation, and index retrieval.
-
-```mermaid
-graph TD
-    User([User]) <--> GUI[CustomTkinter App Interface]
-    GUI <--> DB[(SQLite Database)]
-    GUI <--> RAG[RAG Pipeline Controller]
-    
-    subgraph Ingestion Pipeline
-        Doc[Source Files PDF/Word/Text] --> Proc[Document Processor]
-        Proc --> Spl[Recursive Chunk Splitter]
-        Spl --> Embed[Embedding Manager]
-        Embed --> FAISS[(Local FAISS Indexes)]
-    end
-    
-    subgraph Query Execution
-        RAG --> Retrieval[Merged FAISS Retrieval]
-        Retrieval --> Prompt[Context prompt builder]
-        Prompt --> LLM[LLM Manager]
-        LLM --> Stream[Callback token streaming]
-        Stream --> GUI
-    end
+               +----------------------------------+
+               |  DocMind AI Web Interface (SPA)  |
+               +----------------------------------+
+                                |
+                                v (REST API / JSON)
+               +----------------------------------+
+               |         FastAPI Backend          |
+               +----------------------------------+
+                                |
+        +-----------------------+-----------------------+
+        |                       |                       |
+        v                       v                       v
++---------------+     +--------------------+   +-------------------+
+| PostgreSQL DB |     | Controlled Agent   |   | Hybrid Retrieval  |
+| Persistence   |     | Orchestrator       |   | Pipeline          |
++---------------+     +--------------------+   +-------------------+
+  - Users               - Intent Router          - FAISS Vector Store
+  - Documents           - Tool Registry          - Sparse BM25
+  - Conversations       - Token Context Manager  - Reciprocal Rank
+  - Messages            - Citation Validator       Fusion (RRF)
+  - Settings (Encrypted)|                        - Cross-Encoder
+                        +--------------------+     Reranker
+                                |              +-------------------+
+                                v
+                      +--------------------+
+                      | LLM Provider Client|
+                      | (Groq/OpenAI/Ollama|
+                      +--------------------+
 ```
 
 ---
 
-## Workflow
-All major computations (such as document indexing and LLM execution) run asynchronously in dedicated background threads to prevent UI freezes.
+## Tech Stack
 
-```mermaid
-sequenceDiagram
-    autonumber
-    actor User
-    participant GUI as App GUI Thread
-    participant Worker as Background Ingestion Thread
-    participant DB as SQLite DB
-    participant FAISS as FAISS Vectors
-    
-    User->>GUI: Ingest Documents (Drag / Browse)
-    GUI->>Worker: Spin ingestion worker thread
-    activate Worker
-    Worker->>DB: Add document metadata entry
-    Worker->>Worker: Parse text page-by-page
-    Worker->>Worker: Split into character chunks
-    Worker->>DB: Update pages and chunks stats
-    Worker->>FAISS: Index chunks & build local FAISS store
-    Worker-->>GUI: Update progress bars and completion
-    deactivate Worker
-    GUI->>User: Display Indexed files list with stats
-```
+- **Backend**: Python 3.13, FastAPI, Uvicorn, Pydantic
+- **Database & Storage**: PostgreSQL (psycopg3), SQLAlchemy 2.0, Alembic
+- **Vector & RAG Retrieval**: FAISS (`faiss-cpu`), PyMuPDF (`fitz`), `python-docx`, SentenceTransformers, Rank-BM25
+- **LLM Integrations**: LangChain (`langchain-groq`, `langchain-openai`, `langchain-ollama`), Groq API
+- **Security**: Cryptography (`Fernet` key encryption at rest)
+- **Testing**: Pytest, FastAPI TestClient
 
 ---
 
-## Features
-
-### 📊 Workspace Dashboard
-- Real-time library stats: total document count, total parsed vector chunks, active LLM model engines, storage footprints, and engagement metrics.
-- Unified **Global Semantic Search** looking up matching filenames, message history logs, and document snippets concurrently.
-- Quick Actions bar to jump instantly to settings, uploads, or AI chat tabs.
-
-### 📁 Advanced Document Repository
-- View comprehensive document stats (file size, uploaded timestamp, parsing statuses, page count, and chunk splits).
-- Perform individual actions: **Open** (with native OS default app), **Index** (re-index using new chunk constraints), **Meta** (inspect metadata card), **Rename**, and **Delete**.
-- Unified **AI Insights** generation providing an executive summary, core keywords list, and suggested follow-up questions for any document.
-
-### 💬 Asynchronous Streaming Chat
-- Real-time token-by-token streaming with interactive **Stop Generation** control.
-- Citation drawer for each response showing matching document page numbers, source texts, and similarity scores.
-- Clickable citation headers that launch a **Built-in PDF Page Viewer** rendering the exact page source as a high-fidelity image or text block.
-- Export chat session transcripts to plain TXT or styled PDF.
-
-### 📈 Usage & Performance Analytics
-- Real-time aggregated statistics from SQLite DB.
-- Automatically calculates and visualizes **Most Asked Topics** using keyword frequency algorithms and **Most Cited Documents** based on history citations.
-- Tracks and displays real query response latencies instead of mock benchmarks.
-
----
-
-## Technologies Used
-
-- Python
-- CustomTkinter
-- LangChain
-- FAISS
-- SQLite
-- Sentence Transformers
-- PyMuPDF
-- python-docx
-- Pillow
-- Ollama
-- Groq API
-- OpenAI API
-
-## Folder Structure
+## Directory Structure
 
 ```text
 DocMind-AI/
-├── app.py                   # Main application entry point
-├── database.py              # SQLite database operations
-├── document_processor.py    # PDF, DOCX and TXT processing
-├── embeddings.py            # Embedding model management
-├── vector_store.py          # FAISS vector index management
-├── llm_manager.py           # LLM providers (Ollama, Groq, OpenAI)
-├── chat_manager.py          # Chat session handling
-├── rag_pipeline.py          # Retrieval-Augmented Generation pipeline
-├── utils.py                 # Utility functions
-├── requirements.txt         # Project dependencies
-├── README.md                # Project documentation
-├── database/                # Generated automatically at runtime
-├── documents/               # User uploaded documents
-├── vectors/                 # Generated FAISS indexes
-├── screenshots/             # Application screenshots
-└── ui/
-    ├── components.py
-    ├── login.py
-    ├── dashboard.py
-    ├── chat.py
-    ├── upload.py
-    ├── settings.py
-    ├── history.py
-    ├── analytics.py
-    └── viewer.py
+├── agent/                             # Autonomous Agent framework & tool implementations
+│   ├── orchestrator.py                # Agent Execution Orchestrator
+│   ├── router.py                      # Intent Routing engine
+│   └── tools/                         # Search, Metadata, & Calculator tools
+├── backend/                           # FastAPI Application Core
+│   ├── api/routes/                    # REST Endpoint handlers (chat, docs, history, settings)
+│   ├── core/                          # Logging, app configuration, & Fernet encryption
+│   ├── database/                      # SQLAlchemy Engine, Session, & ORM Models
+│   ├── schemas/                       # Pydantic Request/Response DTOs
+│   └── services/                      # Business logic services
+├── memory/                            # Token-budgeted context memory & summary manager
+├── repositories/                      # PostgreSQL Repository Access Layer
+├── retrieval/                         # Hybrid Retrieval (FAISS + BM25 + RRF + Cross-Encoder)
+├── static/                            # Frontend Assets (Vanilla CSS design system & JavaScript SPA controller)
+├── templates/                         # Single Page Application HTML templates
+├── tests/                             # Automated Test Suite (92 tests)
+└── requirements.txt                   # Python Dependencies
 ```
 
 ---
 
-## Screenshots
+## Prerequisites & Installation
 
-### Login
+### 1. Prerequisites
 
-![Login](screenshots/docmind-login.png)
+- **Python**: 3.11+ (Python 3.13 recommended)
+- **PostgreSQL**: Local instance or remote PostgreSQL server running on port `5432`
 
-### Dashboard
-
-![Dashboard](screenshots/docmind-dashboard.png)
-
-### Document Upload
-
-![Document Upload](screenshots/docmind-upload.png)
-
-### AI Chat
-
-![AI Chat](screenshots/docmind-chat.png)
-
-### Analytics
-
-![Analytics](screenshots/docmind-analytics.png)
-
-### Settings
-
-![Settings](screenshots/docmind-settings.png)
-
-## Installation
-
-### Clone Repository
+### 2. Clone & Setup Virtual Environment
 
 ```bash
-git clone https://github.com/minbot616/DocMind-AI.git
+# Clone the repository
+git clone https://github.com/your-username/DocMind-AI.git
 cd DocMind-AI
-```
 
-### Create Virtual Environment (Recommended)
+# Create virtual environment
+python -m venv .venv
 
-```bash
-python -m venv venv
-```
+# Activate virtual environment
+# Windows (PowerShell):
+.venv\Scripts\Activate.ps1
+# Linux/macOS:
+source .venv/bin/activate
 
-Windows
-
-```bash
-venv\Scripts\activate
-```
-
-macOS/Linux
-
-```bash
-source venv/bin/activate
-```
-
-### Install Dependencies
-
-```bash
+# Install dependencies
 pip install -r requirements.txt
 ```
 
-### Run Application
+---
+
+## Environment Variables Configuration
+
+Copy `.env.example` to `.env` in the project root:
 
 ```bash
-python app.py
+cp .env.example .env
 ```
 
-### Optional (Local AI with Ollama)
+Configure your environment parameters:
 
-Install Ollama and download a model:
+```ini
+# Database Configuration
+DATABASE_URL=postgresql+psycopg://postgres:postgres@127.0.0.1:5432/docmind_db
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+POSTGRES_DB=docmind_db
+POSTGRES_HOST=127.0.0.1
+POSTGRES_PORT=5432
 
-```bash
-ollama pull llama3
+# Application Settings
+LLM_PROVIDER=Groq
+LLM_MODEL=llama-3.1-8b-instant
+EMBEDDING_MODEL=all-MiniLM-L6-v2
+
+# Optional Server-Side Secret Key for API Key Encryption at Rest
+DOCMIND_SECRET_KEY=your_generated_fernet_secret_key_here
 ```
-
-Start the Ollama service before launching the application.
 
 ---
 
-## Configuration
-All options can be updated directly within the **Settings & Preferences** tab:
-1. **Appearance**: Switch theme modes dynamically (Dark, Light, System).
-2. **Embeddings Settings**: Select indexing embeddings models (`all-MiniLM-L6-v2`, `all-mpnet-base-v2`, or `openai`).
-3. **Text Chunking**: Customize **Chunk Size** and **Chunk Overlap** values to optimize search granularity.
-4. **AI Provider**: Configure LLM providers (Ollama, Groq, OpenAI) and input API keys.
-5. **Model Settings**: Configure active model, generation **Temperature**, and **Maximum Tokens**.
-6. **Connection Tester**: Click **Test LLM Connection** to query selected endpoints asynchronously without freezing the interface.
+## PostgreSQL Database Initialization
+
+1. Create local PostgreSQL database `docmind_db`:
+   ```sql
+   CREATE DATABASE docmind_db;
+   ```
+2. On initial startup, DocMind AI automatically creates all ORM database tables (`users`, `documents`, `conversations`, `messages`, `settings`) and runs schema migrations.
 
 ---
 
-## Future Work
-- **BM25 Hybrid Retrieval**: Combine keyword lookups with vector search for better keyword matching.
-- **Reranking**: Add flashrank or cohere rerankers to narrow down high-relevance chunks.
-- **OCR Ingestion**: Integrate Tesseract OCR libraries to process scanned assets.
-- **GPU Acceleration**: Detect CUDA or MPS platforms automatically to load sentence-transformers faster.
+## Running the Application
+
+Start the FastAPI backend and web server:
+
+```bash
+python -m backend.main
+```
+
+Open your browser and navigate to:
+```text
+http://127.0.0.1:8000
+```
+
+---
+
+## Running Automated Tests
+
+Run the complete automated regression test suite:
+
+```bash
+python -m pytest tests/
+```
+
+Expected baseline output:
+```text
+================= 92 passed, 28 warnings in 71.57s (0:01:11) ==================
+```
+
+---
+
+## License
+
+Distributed under the MIT License. See `LICENSE` for more information.

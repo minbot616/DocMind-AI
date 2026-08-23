@@ -121,20 +121,41 @@ class DocumentProcessor:
             raise ValueError(f"Unsupported file format: {ext}")
 
     @classmethod
-    def chunk_documents(cls, pages: List[Dict[str, Any]], chunk_size: int = 800, chunk_overlap: int = 150) -> List[Dict[str, Any]]:
-        """Chunks pages of text into smaller, overlapping sections using RecursiveCharacterTextSplitter."""
+    def chunk_documents(cls, pages: List[Dict[str, Any]], chunk_size: int = 800, chunk_overlap: int = 150, document_id: int = 0) -> List[Dict[str, Any]]:
+        """Chunks pages of text into smaller, overlapping sections using RecursiveCharacterTextSplitter and attaches rich metadata."""
         splitter = RecursiveCharacterTextSplitter(
             chunk_size=chunk_size,
             chunk_overlap=chunk_overlap,
-            length_function=len
+            length_function=len,
+            separators=["\n\n", "\n", ". ", " ", ""]
         )
 
         chunks = []
+        global_chunk_idx = 0
         for page in pages:
             split_texts = splitter.split_text(page["text"])
             for split_text in split_texts:
+                page_meta = page["metadata"].copy()
+                filename = page_meta.get("source", "unknown")
+                chunk_id = f"doc_{document_id}_chk_{global_chunk_idx}"
+
+                meta = {
+                    "document_id": document_id,
+                    "filename": filename,
+                    "source": filename,
+                    "chunk_id": chunk_id,
+                    "chunk_index": global_chunk_idx,
+                    "page": page_meta.get("page", 1),
+                    "file_type": page_meta.get("type", "unknown")
+                }
+                # Preserve any extra metadata keys
+                meta.update({k: v for k, v in page_meta.items() if k not in meta})
+
                 chunks.append({
                     "text": split_text,
-                    "metadata": page["metadata"].copy()
+                    "metadata": meta
                 })
+                global_chunk_idx += 1
+
         return chunks
+
