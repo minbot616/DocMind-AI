@@ -9,54 +9,57 @@ It combines a FastAPI backend, PostgreSQL persistence, hybrid retrieval using de
 - **Multi-Document Ingestion** — Upload PDF, DOCX, TXT, and Markdown files with automatic text extraction, chunking, and metadata handling.
 - **Hybrid Retrieval** — Combines dense FAISS retrieval with BM25 lexical search using Reciprocal Rank Fusion (RRF).
 - **Cross-Encoder Reranking** — Re-ranks retrieved document chunks to improve relevance before generating an answer.
-- **Document-Grounded Answers** — Answers are generated using retrieved document context with supporting source citations.
+- **Document-Grounded Answers** — Generates answers using retrieved document context with supporting source citations.
 - **Agent-Based Document Search** — Routes document-related requests through a controlled agent and document search pipeline.
 - **Conversation Memory** — Maintains conversation context with token-aware memory and summarization.
 - **Multi-Provider LLM Support** — Supports Groq, OpenAI, and Ollama through the LLM manager.
 - **Encrypted Credentials** — LLM API credentials stored in PostgreSQL are encrypted at rest using Fernet encryption.
 - **Persistent Chat History** — Conversations and messages are stored in PostgreSQL and remain available after browser or server restarts.
 - **Document Scoping** — Chat queries can be restricted to selected documents.
-- **Document Insights** — Provides an overview of the documents and indexed content in the knowledge base.
+- **Document Insights** — Provides an overview of documents and indexed content in the knowledge base.
 
 ## System Architecture
 
-                    +-----------------------------+
-                    |       DocMind AI Web UI     |
-                    |       HTML / CSS / JS       |
-                    +-------------+---------------+
-                                  |
-                                  | REST API
-                                  v
-                    +-----------------------------+
-                    |      FastAPI Backend        |
-                    +-------------+---------------+
-                                  |
-             +--------------------+--------------------+
-             |                    |                    |
-             v                    v                    v
-     +---------------+    +---------------+    +---------------+
-     |  PostgreSQL   |    | Agent Layer   |    | Retrieval     |
-     |  Persistence  |    |               |    | Pipeline      |
-     +---------------+    +---------------+    +---------------+
-     | Users         |    | Router        |    | FAISS         |
-     | Documents     |    | Orchestrator  |    | BM25          |
-     | Conversations |    | Tools         |    | RRF           |
-     | Messages      |    | Memory        |    | Reranker      |
-     | Settings      |    +---------------+    +---------------+
-     +---------------+             |                    |
-             |                     +---------+----------+
-             |                               |
-             +-------------------------------v
-                                  +-------------------+
-                                  |   LLM Providers   |
-                                  | Groq / OpenAI /   |
-                                  | Ollama            |
-                                  +-------------------+
+```text
+                         +-----------------------------+
+                         |       DocMind AI Web UI     |
+                         |       HTML / CSS / JS       |
+                         +-------------+---------------+
+                                       |
+                                       | REST API
+                                       v
+                         +-----------------------------+
+                         |      FastAPI Backend        |
+                         +-------------+---------------+
+                                       |
+              +------------------------+------------------------+
+              |                        |                        |
+              v                        v                        v
+      +---------------+        +---------------+        +---------------+
+      |  PostgreSQL   |        | Agent Layer   |        | Retrieval     |
+      |  Persistence  |        |               |        | Pipeline      |
+      +---------------+        +---------------+        +---------------+
+      | Users         |        | Router        |        | FAISS         |
+      | Documents     |        | Orchestrator  |        | BM25          |
+      | Conversations |        | Tools         |        | RRF           |
+      | Messages      |        | Memory        |        | Reranker      |
+      | Settings      |        +---------------+        +---------------+
+      +---------------+                |                        |
+              |                        +------------+-----------+
+              |                                     |
+              +-------------------------------------v
+                                          +-------------------+
+                                          |   LLM Providers   |
+                                          | Groq / OpenAI /   |
+                                          | Ollama            |
+                                          +-------------------+
+```
 
 ## Retrieval Pipeline
 
-For document questions, DocMind AI uses a hybrid retrieval pipeline:
+For document questions, DocMind AI uses the following retrieval flow:
 
+```text
 User Query
     |
     +----------------------+
@@ -79,10 +82,12 @@ FAISS Dense Search     BM25 Search
              |
              v
        LLM Response
+```
 
 ## Tech Stack
 
 ### Backend
+
 - Python
 - FastAPI
 - Uvicorn
@@ -90,11 +95,13 @@ FAISS Dense Search     BM25 Search
 - SQLAlchemy
 
 ### Database
+
 - PostgreSQL
 - Psycopg
 - Alembic
 
 ### Retrieval & RAG
+
 - FAISS
 - Sentence Transformers
 - BM25
@@ -102,72 +109,80 @@ FAISS Dense Search     BM25 Search
 - Cross-Encoder Reranking
 
 ### Document Processing
+
 - PyMuPDF
 - python-docx
 - Markdown/text processing
 
 ### LLM Integration
+
 - Groq
 - OpenAI
 - Ollama
 - LangChain integrations
 
 ### Security
+
 - Python Cryptography
 - Fernet encryption for stored LLM credentials
 
 ### Frontend
+
 - HTML
 - CSS
 - Vanilla JavaScript
 
 ### Testing
+
 - Pytest
 - FastAPI TestClient
 
 ## Project Structure
 
+```text
 DocMind-AI/
-|
-├── agent/                    # Agent routing, orchestration, and tools
-│   └── tools/                # Document search and metadata tools
-|
-├── backend/                  # FastAPI application
-│   ├── api/                  # API routes
-│   ├── core/                 # Configuration, logging, security
-│   ├── database/             # SQLAlchemy models and database configuration
-│   ├── schemas/              # Request and response schemas
-│   └── services/             # Application services
-|
-├── memory/                   # Conversation context and token management
-├── repositories/             # PostgreSQL data access layer
-├── retrieval/                # FAISS, BM25, RRF, and reranking
-├── evaluation/               # Retrieval, citation, and answer evaluation
-├── scripts/                  # Maintenance and migration utilities
-├── static/                   # CSS and JavaScript
-├── templates/                # Web interface templates
-├── tests/                    # Automated test suite
-├── documents/                # Runtime document storage
-├── vectors/                  # Runtime vector indexes
-├── alembic/                  # Database migrations
-|
-├── chat_manager.py           # Chat management facade
-├── database.py               # Database facade
-├── document_processor.py     # Document processing
-├── embeddings.py             # Embedding utilities
-├── llm_manager.py            # LLM provider management
-├── rag_pipeline.py           # RAG pipeline
-├── vector_store.py           # Vector store management
-|
+│
+├── agent/                         # Agent routing, orchestration, and tools
+│   └── tools/                     # Document search and metadata tools
+│
+├── backend/                       # FastAPI application
+│   ├── api/                       # API routes
+│   ├── core/                      # Configuration, logging, security
+│   ├── database/                  # SQLAlchemy models and database configuration
+│   ├── schemas/                   # Request and response schemas
+│   └── services/                 # Application services
+│
+├── memory/                        # Conversation context and token management
+├── repositories/                  # PostgreSQL data access layer
+├── retrieval/                     # FAISS, BM25, RRF, and reranking
+├── evaluation/                    # Retrieval, citation, and answer evaluation
+├── scripts/                       # Maintenance and migration utilities
+├── static/                        # CSS and JavaScript
+├── templates/                     # Web interface templates
+├── tests/                         # Automated test suite
+├── documents/                     # Runtime document storage
+├── vectors/                       # Runtime vector indexes
+├── alembic/                       # Database migrations
+│
+├── chat_manager.py                # Chat management facade
+├── database.py                    # Database facade
+├── document_processor.py          # Document processing
+├── embeddings.py                  # Embedding utilities
+├── llm_manager.py                 # LLM provider management
+├── rag_pipeline.py                # RAG pipeline
+├── vector_store.py                # Vector store management
+│
 ├── Dockerfile
 ├── docker-compose.yml
 ├── requirements.txt
 ├── .env.example
+├── .gitignore
 └── README.md
+```
 
 ## Configuration
 
-DocMind AI uses PostgreSQL for persistence and supports external or local LLM providers.
+DocMind AI uses PostgreSQL for persistent application data and supports configurable LLM providers.
 
 Configuration values are provided through environment variables. See `.env.example` for the available settings.
 
@@ -177,7 +192,7 @@ Sensitive credentials are not included in the repository.
 
 ## Database
 
-DocMind AI uses PostgreSQL for persistent application data, including:
+PostgreSQL stores the application's persistent data, including:
 
 - Users
 - Documents
@@ -185,7 +200,7 @@ DocMind AI uses PostgreSQL for persistent application data, including:
 - Messages
 - Settings
 
-Database schema management is handled through SQLAlchemy and Alembic.
+Database access is handled through SQLAlchemy and PostgreSQL, with Alembic included for schema migrations.
 
 ## Security
 
@@ -196,7 +211,8 @@ The application also:
 - Keeps `.env` files out of version control.
 - Masks API credentials in API responses.
 - Avoids writing API keys to application logs.
-- Keeps runtime documents and vector indexes outside Git tracking.
+- Keeps runtime documents outside Git tracking.
+- Keeps generated vector indexes outside Git tracking.
 
 ## Testing
 
@@ -215,14 +231,17 @@ The project includes automated tests covering:
 - Credential encryption
 - LLM configuration
 - Frontend workflows
+- Agent routing and tools
 
 Current local verification:
 
+```text
 92 tests passed
+```
 
 ## Current Status
 
-DocMind AI is currently developed as a local web application using FastAPI, PostgreSQL, and configurable LLM providers.
+DocMind AI is developed as a local web application using FastAPI, PostgreSQL, and configurable LLM providers.
 
 The repository contains the application source code, tests, database migrations, configuration templates, and deployment configuration.
 
