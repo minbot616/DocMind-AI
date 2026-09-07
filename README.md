@@ -4,6 +4,10 @@ DocMind AI is a document-focused RAG and agent system for uploading documents, s
 
 It combines a FastAPI backend, PostgreSQL persistence, hybrid retrieval using dense FAISS and BM25 search, Reciprocal Rank Fusion (RRF), cross-encoder reranking, citation validation, and token-aware conversation memory.
 
+## Dashboard
+
+![DocMind AI Dashboard](screenshots/DocMind%20AI%20Dashboard.jpeg)
+
 ## Key Features
 
 - **Multi-Document Ingestion** — Upload PDF, DOCX, TXT, and Markdown files with automatic text extraction, chunking, and metadata handling.
